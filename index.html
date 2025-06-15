@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <style>
+    .calculator {
+      width: 200px;
+      margin: 20px auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .display input {
+      width: 100%;
+      height: 40px;
+      font-size: 20px;
+      text-align: right;
+      border: none;
+      margin-bottom: 10px;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+    .buttons button {
+      height: 40px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .buttons button:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <input type="text" id="display" value="" readonly>
+    </div>
+    <div class="buttons">
+      <button value="7">7</button>
+      <button value="8">8</button>
+      <button value="9">9</button>
+      <button value="/">/</button>
+      <button value="4">4</button>
+      <button value="5">5</button>
+      <button value="6">6</button>
+      <button value="*">*</button>
+      <button value="1">1</button>
+      <button value="2">2</button>
+      <button value="3">3</button>
+      <button value="-">-</button>
+      <button value="0">0</button>
+      <button value=".">.</button>
+      <button value="C">C</button>
+      <button value="+">+</button>
+      <button value="=">=</button>
+    </div>
+  </div>
+  <script>
+    const display = document.getElementById('display');
+    const buttons = document.querySelectorAll('.buttons button');
+    let operand1 = null;
+    let operation = null;
+    let waitingForSecondOperand = false;
 
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const value = button.value;
+
+        // Handle digits and decimal point
+        if (!isNaN(value) || value === '.') {
+          if (waitingForSecondOperand) {
+            display.value = value;
+            waitingForSecondOperand = false;
+          } else {
+            display.value = (display.value || '') + value;
+          }
+        }
+        // Handle operations
+        else if (['+', '-', '*', '/'].includes(value)) {
+          operand1 = display.value;
+          operation = value;
+          waitingForSecondOperand = true;
+        }
+        // Handle equals
+        else if (value === '=') {
+          if (operand1 && operation) {
+            let operand2 = display.value;
+            let result = eval(operand1 + operation + operand2);
+            display.value = result;
+            operand1 = null;
+            operation = null;
+          }
+        }
+        // Handle clear
+        else if (value === 'C') {
+          display.value = '';
+          operand1 = null;
+          operation = null;
+          waitingForSecondOperand = false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
