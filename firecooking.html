@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Chaos - Overcooked Style Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #2c3e50;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .score {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .timer {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .kitchen {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 500px;
+            background: #34495e;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .station {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .station:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .cutting-board {
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            top: 50px;
+            left: 50px;
+        }
+
+        .stove {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            top: 50px;
+            right: 50px;
+        }
+
+        .trash {
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+            bottom: 50px;
+            left: 50px;
+        }
+
+        .serving {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            bottom: 50px;
+            right: 50px;
+        }
+
+        .ingredient-spawn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            top: 200px;
+            left: 50px;
+        }
+
+        .orders {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 90;
+        }
+
+        .order {
+            background: rgba(52, 152, 219, 0.9);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: rgba(231, 76, 60, 0.3);
+            width: var(--progress, 0%);
+            transition: width 0.1s ease;
+        }
+
+        .order-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .inventory {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 25px;
+        }
+
+        .inventory-item {
+            background: rgba(52, 152, 219, 0.9);
+            padding: 10px 15px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .inventory-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .particles {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #f39c12;
+            border-radius: 50%;
+            animation: particle-float 1s ease-out forwards;
+        }
+
+        @keyframes particle-float {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .restart-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            max-width: 600px;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="hud">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="timer">Time: <span id="timer">120</span>s</div>
+        </div>
+
+        <div class="kitchen">
+            <div class="station cutting-board" data-station="cut">🔪</div>
+            <div class="station stove" data-station="cook">🔥</div>
+            <div class="station trash" data-station="trash">🗑️</div>
+            <div class="station serving" data-station="serve">🍽️</div>
+            <div class="station ingredient-spawn" data-station="ingredients">🥕</div>
+        </div>
+
+        <div class="orders">
+            <h3 style="color: white; margin-bottom: 15px;">Orders</h3>
+            <div id="orders-list"></div>
+        </div>
+
+        <div class="inventory" id="inventory"></div>
+
+        <div class="particles" id="particles"></div>
+
+        <div class="instructions" id="instructions">
+            <h2>🍳 Kitchen Chaos! 🍳</h2>
+            <p>Welcome to the kitchen! Fulfill orders before time runs out!</p>
+            <br>
+            <p><strong>How to play:</strong></p>
+            <p>🥕 Click ingredients to pick them up</p>
+            <p>🔪 Cut vegetables at the cutting board</p>
+            <p>🔥 Cook items on the stove</p>
+            <p>🍽️ Serve completed dishes</p>
+            <p>🗑️ Trash unwanted items</p>
+            <br>
+            <p>Complete orders quickly for bonus points!</p>
+            <button class="start-btn" onclick="startGame()">Start Cooking!</button>
+        </div>
+
+        <div class="game-over" id="game-over">
+            <h2>Time's Up!</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <p>Orders Completed: <span id="orders-completed">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Cook Again!</button>
+        </div>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.score = 0;
+                this.time = 120;
+                this.gameRunning = false;
+                this.inventory = [];
+                this.orders = [];
+                this.ordersCompleted = 0;
+                this.gameInterval = null;
+                this.orderInterval = null;
+                
+                this.ingredients = ['🥕', '🍅', '🥬', '🧅', '🥒'];
+                this.recipes = {
+                    'Salad': ['🥬', '🍅', '🥒'],
+                    'Veggie Mix': ['🥕', '🧅', '🥬'],
+                    'Garden Bowl': ['🍅', '🥕', '🧅'],
+                    'Fresh Combo': ['🥒', '🥬', '🍅']
+                };
+                
+                this.initializeEventListeners();
+                this.updateDisplay();
+            }
+
+            initializeEventListeners() {
+                document.querySelectorAll('.station').forEach(station => {
+                    station.addEventListener('click', () => this.handleStationClick(station));
+                });
+            }
+
+            startGame() {
+                document.getElementById('instructions').style.display = 'none';
+                this.gameRunning = true;
+                this.score = 0;
+                this.time = 120;
+                this.inventory = [];
+                this.orders = [];
+                this.ordersCompleted = 0;
+                
+                this.gameInterval = setInterval(() => {
+                    this.time--;
+                    this.updateDisplay();
+                    
+                    if (this.time <= 0) {
+                        this.endGame();
+                    }
+                }, 1000);
+                
+                this.orderInterval = setInterval(() => {
+                    this.generateOrder();
+                }, 8000);
+                
+                this.generateOrder();
+                this.updateDisplay();
+            }
+
+            generateOrder() {
+                const recipes = Object.keys(this.recipes);
+                const recipe = recipes[Math.floor(Math.random() * recipes.length)];
+                const order = {
+                    id: Date.now(),
+                    name: recipe,
+                    ingredients: [...this.recipes[recipe]],
+                    timeLeft: 30,
+                    totalTime: 30
+                };
+                
+                this.orders.push(order);
+                this.updateOrderDisplay();
+                
+                // Start countdown for this order
+                const orderCountdown = setInterval(() => {
+                    order.timeLeft--;
+                    this.updateOrderDisplay();
+                    
+                    if (order.timeLeft <= 0) {
+                        this.removeOrder(order.id);
+                        clearInterval(orderCountdown);
+                    }
+                }, 1000);
+            }
+
+            handleStationClick(station) {
+                if (!this.gameRunning) return;
+                
+                const stationType = station.dataset.station;
+                
+                switch (stationType) {
+                    case 'ingredients':
+                        this.pickUpIngredient();
+                        break;
+                    case 'cut':
+                        this.cutIngredient();
+                        break;
+                    case 'cook':
+                        this.cookIngredient();
+                        break;
+                    case 'serve':
+                        this.serveFood();
+                        break;
+                    case 'trash':
+                        this.trashItem();
+                        break;
+                }
+                
+                this.createParticles(station);
+                this.updateDisplay();
+            }
+
+            pickUpIngredient() {
+                if (this.inventory.length < 3) {
+                    const ingredient = this.ingredients[Math.floor(Math.random() * this.ingredients.length)];
+                    this.inventory.push(ingredient);
+                }
+            }
+
+            cutIngredient() {
+                if (this.inventory.length > 0) {
+                    let item = this.inventory.pop();
+                    // Simulate cutting by adding "cut" prefix
+                    if (!item.includes('cut')) {
+                        item = 'cut ' + item;
+                    }
+                    this.inventory.push(item);
+                }
+            }
+
+            cookIngredient() {
+                if (this.inventory.length > 0) {
+                    let item = this.inventory.pop();
+                    // Simulate cooking by adding "cooked" prefix
+                    if (!item.includes('cooked')) {
+                        item = 'cooked ' + item;
+                    }
+                    this.inventory.push(item);
+                }
+            }
+
+            serveFood() {
+                if (this.inventory.length === 0) return;
+                
+                // Check if current inventory matches any order
+                for (let order of this.orders) {
+                    if (this.checkOrderMatch(order)) {
+                        this.completeOrder(order);
+                        return;
+                    }
+                }
+                
+                // If no match, clear inventory (failed attempt)
+                this.inventory = [];
+            }
+
+            checkOrderMatch(order) {
+                // Simple matching - check if we have the required ingredients
+                const requiredIngredients = [...order.ingredients];
+                const currentIngredients = [...this.inventory];
+                
+                for (let required of requiredIngredients) {
+                    const found = currentIngredients.findIndex(item => item.includes(required));
+                    if (found === -1) return false;
+                    currentIngredients.splice(found, 1);
+                }
+                
+                return true;
+            }
+
+            completeOrder(order) {
+                this.removeOrder(order.id);
+                this.inventory = [];
+                this.ordersCompleted++;
+                
+                // Bonus points for completing quickly
+                const timeBonus = Math.floor(order.timeLeft * 10);
+                this.score += 100 + timeBonus;
+                
+                this.showScorePopup(100 + timeBonus);
+            }
+
+            removeOrder(orderId) {
+                this.orders = this.orders.filter(order => order.id !== orderId);
+                this.updateOrderDisplay();
+            }
+
+            trashItem() {
+                if (this.inventory.length > 0) {
+                    this.inventory.pop();
+                }
+            }
+
+            createParticles(station) {
+                const rect = station.getBoundingClientRect();
+                const particleContainer = document.getElementById('particles');
+                
+                for (let i = 0; i < 5; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = rect.left + rect.width / 2 + 'px';
+                    particle.style.top = rect.top + rect.height / 2 + 'px';
+                    particle.style.transform = `translate(${(Math.random() - 0.5) * 50}px, ${(Math.random() - 0.5) * 50}px)`;
+                    
+                    particleContainer.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 1000);
+                }
+            }
+
+            showScorePopup(points) {
+                const popup = document.createElement('div');
+                popup.style.position = 'fixed';
+                popup.style.top = '50%';
+                popup.style.left = '50%';
+                popup.style.transform = 'translate(-50%, -50%)';
+                popup.style.color = '#f39c12';
+                popup.style.fontSize = '24px';
+                popup.style.fontWeight = 'bold';
+                popup.style.zIndex = '1001';
+                popup.style.pointerEvents = 'none';
+                popup.textContent = `+${points}`;
+                
+                document.body.appendChild(popup);
+                
+                setTimeout(() => {
+                    popup.remove();
+                }, 1000);
+            }
+
+            updateDisplay() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('timer').textContent = this.time;
+                
+                const inventoryEl = document.getElementById('inventory');
+                inventoryEl.innerHTML = '';
+                
+                this.inventory.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'inventory-item';
+                    itemEl.textContent = item;
+                    inventoryEl.appendChild(itemEl);
+                });
+                
+                // Add empty slots
+                for (let i = this.inventory.length; i < 3; i++) {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'inventory-item';
+                    itemEl.style.opacity = '0.3';
+                    itemEl.textContent = 'Empty';
+                    inventoryEl.appendChild(itemEl);
+                }
+            }
+
+            updateOrderDisplay() {
+                const ordersEl = document.getElementById('orders-list');
+                ordersEl.innerHTML = '';
+                
+                this.orders.forEach(order => {
+                    const orderEl = document.createElement('div');
+                    orderEl.className = 'order';
+                    
+                    const progress = (order.timeLeft / order.totalTime) * 100;
+                    orderEl.style.setProperty('--progress', `${100 - progress}%`);
+                    
+                    orderEl.innerHTML = `
+                        <div class="order-content">
+                            <div>${order.name}</div>
+                            <div style="font-size: 12px; margin-top: 5px;">
+                                ${order.ingredients.join(' + ')}
+                            </div>
+                            <div style="font-size: 12px; margin-top: 5px;">
+                                Time: ${order.timeLeft}s
+                            </div>
+                        </div>
+                    `;
+                    
+                    ordersEl.appendChild(orderEl);
+                });
+            }
+
+            endGame() {
+                this.gameRunning = false;
+                clearInterval(this.gameInterval);
+                clearInterval(this.orderInterval);
+                
+                document.getElementById('final-score').textContent = this.score;
+                document.getElementById('orders-completed').textContent = this.ordersCompleted;
+                document.getElementById('game-over').style.display = 'block';
+            }
+
+            restart() {
+                document.getElementById('game-over').style.display = 'none';
+                this.startGame();
+            }
+        }
+
+        let game = new Game();
+
+        function startGame() {
+            game.startGame();
+        }
+
+        function restartGame() {
+            game.restart();
+        }
+    </script>
+</body>
+</html>
